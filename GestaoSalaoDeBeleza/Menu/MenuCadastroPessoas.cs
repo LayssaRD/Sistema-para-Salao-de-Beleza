@@ -196,7 +196,7 @@ public static class MenuCadastroPessoas<T> where T : class, IEntidade, new()
                 string? novoValor = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(novoValor))
-                    break; // mantém o valor atual
+                    break; 
 
                 if (!string.IsNullOrWhiteSpace(novoValor))
                 {
@@ -216,7 +216,7 @@ public static class MenuCadastroPessoas<T> where T : class, IEntidade, new()
                 string? input = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(input))
-                    break; // mantém valor atual
+                    break; 
 
                 if (DateTime.TryParseExact(input, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime dt))
                 {

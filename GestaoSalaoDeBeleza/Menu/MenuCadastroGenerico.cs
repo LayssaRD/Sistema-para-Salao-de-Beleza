@@ -54,6 +54,18 @@ public class MenuCadastroGenerico
                         Console.WriteLine("Deseja adicionar horário(s) de trabalho? (s/n)");
                         if (Console.ReadLine()?.Trim().ToLower() == "s")
                         {
+                             Console.WriteLine("Horários de trabalho já cadastrados:");
+                        if (profissional.HorarioTrabalho.Count == 0)
+                        {
+                            Console.WriteLine("Nenhum horário cadastrado.");
+                        }
+                        else
+                        {
+                            foreach (var h in profissional.HorarioTrabalho)
+                            {
+                                Console.WriteLine($"- {h.HoraInicio:hh\\:mm} às {h.HoraFim:hh\\:mm}");
+                            }
+                        }
 
                             bool adicionarHorario = true;
                             while (adicionarHorario)
