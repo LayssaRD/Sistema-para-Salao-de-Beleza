@@ -22,7 +22,8 @@ public class MenuCadastroGenerico
             switch (opcao)
             {
                 case "1": MenuCadastroPessoas<Cliente>.Executar("Cliente", cliente => { }); break;
-                case "2": MenuCadastroPessoas<Profissional>.Executar("Profissional", profissional =>
+                case "2":
+                    MenuCadastroPessoas<Profissional>.Executar("Profissional", profissional =>
                     {
                         Console.Write("Deseja adicionar especialidade? (s/n): ");
                         if (Console.ReadLine()?.Trim().ToLower() == "s")
@@ -50,14 +51,16 @@ public class MenuCadastroGenerico
                             }
                         }
 
-                        Console.WriteLine("Deseja adicionar horário de trabalho? (s/n)");
+                        Console.WriteLine("Deseja adicionar horário(s) de trabalho? (s/n)");
                         if (Console.ReadLine()?.Trim().ToLower() == "s")
                         {
-                            TimeSpan inicio;
-                            TimeSpan fim;
 
-                            while (true)
+                            bool adicionarHorario = true;
+                            while (adicionarHorario)
                             {
+                                TimeSpan inicio;
+                                TimeSpan fim;
+
                                 while (true)
                                 {
                                     Console.Write("Hora início (HH:mm): ");
@@ -78,15 +81,38 @@ public class MenuCadastroGenerico
 
                                 if (inicio < fim)
                                 {
-                                    break; 
+                                    if (!profissional.HorariosConflitam(inicio, fim))
+                                    {
+                                        profissional.TentarAdicionarHorario(new HorarioTrabalho(inicio, fim));
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Este horário conflita com um horário já cadastrado. Tente outro.");
+                                        continue; 
+                                    }
                                 }
                                 else
                                 {
                                     Console.WriteLine("Hora início deve ser menor que hora fim. Tente novamente.\n");
+                                    continue;
                                 }
-                            }
 
-                            profissional.AdicionarHorarioTrabalho(new HorarioTrabalho(inicio, fim));
+                                Console.WriteLine("Horários de trabalho já cadastrados:");
+                        if (profissional.HorarioTrabalho.Count == 0)
+                        {
+                            Console.WriteLine("Nenhum horário cadastrado.");
+                        }
+                        else
+                        {
+                            foreach (var h in profissional.HorarioTrabalho)
+                            {
+                                Console.WriteLine($"- {h.HoraInicio:hh\\:mm} às {h.HoraFim:hh\\:mm}");
+                            }
+                        }
+
+                                Console.Write("Deseja adicionar outro horário de trabalho? (s/n): ");
+                                adicionarHorario = Console.ReadLine()?.Trim().ToLower() == "s";
+                            }
                         }
                     });
                     break;
@@ -102,4 +128,6 @@ public class MenuCadastroGenerico
 
         } while (opcao != "0");
     }
+
+
 }

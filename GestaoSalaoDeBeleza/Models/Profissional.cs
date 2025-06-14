@@ -14,15 +14,32 @@ public class Profissional : Pessoa, IEntidade
     {
     }
 
+
     public void AdicionarEspecialidade(Especialidade especialidade)
     {
         if (!Especialidades.Contains(especialidade))
             Especialidades.Add(especialidade);
     }
 
-    public void AdicionarHorarioTrabalho(HorarioTrabalho horario)
+    public bool HorariosConflitam(TimeSpan inicioNovo, TimeSpan fimNovo)
     {
+        foreach (var h in HorarioTrabalho)
+        {
+            // Se o intervalo novo se sobrepõe a algum existente, retorna true (conflito)
+            if (!(fimNovo <= h.HoraInicio || inicioNovo >= h.HoraFim))
+                return true;
+        }
+        return false;
+    }
+
+    // Tenta adicionar horário só se não conflitar
+    public bool TentarAdicionarHorario(HorarioTrabalho horario)
+    {
+        if (HorariosConflitam(horario.HoraInicio, horario.HoraFim))
+            return false;
+
         HorarioTrabalho.Add(horario);
+        return true;
     }
 
     public void RemoverEspecialidade(Especialidade especialidade)
