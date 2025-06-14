@@ -1,7 +1,9 @@
 using System;
+using GestaoSalaoDeBeleza.Models;
 using System.Reflection;
 using GenericRepository.Entidade;
 using GenericRepository.Implementacoes;
+
 
 namespace GestaoSalaoDeBeleza.Menu;
 
@@ -196,15 +198,10 @@ public static class MenuCadastroPessoas<T> where T : class, IEntidade, new()
                 string? novoValor = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(novoValor))
-                    break; 
-
-                if (!string.IsNullOrWhiteSpace(novoValor))
-                {
-                    prop.SetValue(entidade, novoValor);
                     break;
-                }
 
-                Console.WriteLine("O valor não pode ser vazio. Tente novamente.");
+                prop.SetValue(entidade, novoValor);
+                break;
             }
         }
         else if (prop.PropertyType == typeof(DateTime))
@@ -216,7 +213,7 @@ public static class MenuCadastroPessoas<T> where T : class, IEntidade, new()
                 string? input = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(input))
-                    break; 
+                    break;
 
                 if (DateTime.TryParseExact(input, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime dt))
                 {
@@ -245,7 +242,7 @@ public static class MenuCadastroPessoas<T> where T : class, IEntidade, new()
                 string? input = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(input))
-                    break; 
+                    break;
 
                 if (int.TryParse(input, out int inteiro))
                 {
@@ -254,6 +251,65 @@ public static class MenuCadastroPessoas<T> where T : class, IEntidade, new()
                 }
 
                 Console.WriteLine("Número inválido. Digite um número inteiro.");
+            }
+        }
+    }
+
+    // 🔁 Este bloco deve ficar fora do foreach das propriedades
+    if (entidade is Profissional profissional)
+    {
+        // ---- Remover especialidade ----
+        Console.Write("Deseja remover uma especialidade existente? (s/n): ");
+        if (Console.ReadLine()?.Trim().ToLower() == "s")
+        {
+            if (profissional.Especialidades.Count == 0)
+            {
+                Console.WriteLine("Este profissional não possui especialidades cadastradas.");
+            }
+            else
+            {
+                foreach (var esp in profissional.Especialidades)
+                    Console.WriteLine($"{(int)esp} - {esp}");
+
+                Console.Write("Digite o número da especialidade que deseja remover: ");
+                if (int.TryParse(Console.ReadLine(), out int cod) &&
+                    Enum.IsDefined(typeof(Especialidade), cod))
+                {
+                    profissional.RemoverEspecialidade((Especialidade)cod);
+                }
+                else
+                {
+                    Console.WriteLine("Especialidade inválida.");
+                }
+            }
+        }
+
+        // ---- Remover horário de trabalho ----
+        Console.Write("Deseja remover um horário de trabalho? (s/n): ");
+        if (Console.ReadLine()?.Trim().ToLower() == "s")
+        {
+            if (profissional.HorarioTrabalho.Count == 0)
+            {
+                Console.WriteLine("Este profissional não possui horários cadastrados.");
+            }
+            else
+            {
+                for (int i = 0; i < profissional.HorarioTrabalho.Count; i++)
+                {
+                    var h = profissional.HorarioTrabalho[i];
+                    Console.WriteLine($"{i} - {h.HoraInicio:hh\\:mm} às {h.HoraFim:hh\\:mm}");
+                }
+
+                Console.Write("Digite o número do horário que deseja remover: ");
+                if (int.TryParse(Console.ReadLine(), out int indice) &&
+                    indice >= 0 && indice < profissional.HorarioTrabalho.Count)
+                {
+                    profissional.RemoverHorarioTrabalho(profissional.HorarioTrabalho[indice]);
+                }
+                else
+                {
+                    Console.WriteLine("Índice de horário inválido.");
+                }
             }
         }
     }
