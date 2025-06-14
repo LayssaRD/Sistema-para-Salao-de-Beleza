@@ -54,15 +54,49 @@ public static class MenuCadastroPessoas<T> where T : class, IEntidade, new()
 
             if (prop.PropertyType == typeof(string))
             {
-                Console.Write($"{prop.Name}: ");
-                string? valor = Console.ReadLine();
-                prop.SetValue(entidade, valor);
+                while (true)
+                {
+                    Console.Write($"{prop.Name}: ");
+                    string? valor = Console.ReadLine();
+
+                    if (!string.IsNullOrWhiteSpace(valor))
+                    {
+                        prop.SetValue(entidade, valor);
+                        break;
+                    }
+
+                    Console.WriteLine("O valor não pode ser vazio. Tente novamente.");
+                }
             }
             else if (prop.PropertyType == typeof(DateTime))
             {
-                Console.Write($"{prop.Name} (dd/MM/yyyy): ");
-                if (DateTime.TryParse(Console.ReadLine(), out DateTime dt))
-                    prop.SetValue(entidade, dt);
+                 while (true)
+    {
+        Console.Write($"{prop.Name} (dd/MM/yyyy): ");
+        string? input = Console.ReadLine();
+
+        if (DateTime.TryParseExact(
+                input,
+                "dd/MM/yyyy",
+                null,
+                System.Globalization.DateTimeStyles.None,
+                out DateTime dt))
+        {
+            if (dt < DateTime.Today)
+            {
+                prop.SetValue(entidade, dt);
+                break;
+            }
+            else
+            {
+                Console.WriteLine("A data deve ser anterior a hoje. Tente novamente.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Data inválida. Use o formato dd/MM/yyyy.");
+        }
+    }
             }
             else if (prop.PropertyType == typeof(int))
             {
@@ -83,17 +117,20 @@ public static class MenuCadastroPessoas<T> where T : class, IEntidade, new()
     {
         var lista = _repo.ObterTodos();
 
-        if (!lista.Any())
-        {
-            Console.WriteLine("Nenhum registro encontrado.");
-            return;
-        }
+    if (!lista.Any())
+    {
+        Console.WriteLine("Nenhum registro encontrado.");
+        return;
+    }
 
-        foreach (var item in lista)
-        {
-            Console.WriteLine(item);
-            Console.WriteLine("-----------------------------------------");
-        }
+    int contador = 1;
+    foreach (var item in lista)
+    {
+        Console.WriteLine($"\nID Representativo: {contador}");
+        Console.WriteLine(item);
+        Console.WriteLine("-----------------------------------------");
+        contador++;
+    }
     }
 
     private static void BuscarPorId()

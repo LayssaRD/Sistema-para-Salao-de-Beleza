@@ -53,11 +53,38 @@ public class MenuCadastroGenerico
                         Console.WriteLine("Deseja adicionar horário de trabalho? (s/n)");
                         if (Console.ReadLine()?.Trim().ToLower() == "s")
                         {
-                            Console.Write("Hora início (HH:mm): ");
-                            var inicio = TimeSpan.Parse(Console.ReadLine()!);
+                            TimeSpan inicio;
+                            TimeSpan fim;
 
-                            Console.Write("Hora fim (HH:mm): ");
-                            var fim = TimeSpan.Parse(Console.ReadLine()!);
+                            while (true)
+                            {
+                                while (true)
+                                {
+                                    Console.Write("Hora início (HH:mm): ");
+                                    string? entradaInicio = Console.ReadLine();
+                                    if (TimeSpan.TryParseExact(entradaInicio, @"hh\:mm", null, out inicio))
+                                        break;
+                                    Console.WriteLine("Horário inválido. Use o formato HH:mm, ex: 08:30.");
+                                }
+
+                                while (true)
+                                {
+                                    Console.Write("Hora fim (HH:mm): ");
+                                    string? entradaFim = Console.ReadLine();
+                                    if (TimeSpan.TryParseExact(entradaFim, @"hh\:mm", null, out fim))
+                                        break;
+                                    Console.WriteLine("Horário inválido. Use o formato HH:mm");
+                                }
+
+                                if (inicio < fim)
+                                {
+                                    break; 
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Hora início deve ser menor que hora fim. Tente novamente.\n");
+                                }
+                            }
 
                             profissional.AdicionarHorarioTrabalho(new HorarioTrabalho(inicio, fim));
                         }
