@@ -5,8 +5,6 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GestaoSalaoDeBeleza", "GestaoSalaoDeBeleza\GestaoSalaoDeBeleza.csproj", "{F81D9E06-136B-4A83-8EDE-16F89D67DB8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenericRepository", "..\Padrao_Repositoty\GenericRepository\GenericRepository.csproj", "{611469ED-54F7-4F38-B095-DD1EC7A31B06}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,18 +27,6 @@ Global
 		{F81D9E06-136B-4A83-8EDE-16F89D67DB8A}.Release|x64.Build.0 = Release|Any CPU
 		{F81D9E06-136B-4A83-8EDE-16F89D67DB8A}.Release|x86.ActiveCfg = Release|Any CPU
 		{F81D9E06-136B-4A83-8EDE-16F89D67DB8A}.Release|x86.Build.0 = Release|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Debug|x64.Build.0 = Debug|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Debug|x86.Build.0 = Debug|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Release|Any CPU.Build.0 = Release|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Release|x64.ActiveCfg = Release|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Release|x64.Build.0 = Release|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Release|x86.ActiveCfg = Release|Any CPU
-		{611469ED-54F7-4F38-B095-DD1EC7A31B06}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

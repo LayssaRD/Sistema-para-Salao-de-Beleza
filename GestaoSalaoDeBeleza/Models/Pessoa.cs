@@ -5,11 +5,13 @@ namespace GestaoSalaoDeBeleza.Models;
 
 public abstract class Pessoa : INotification
 {
-     public Guid Id { get; set; } 
-    public string Nome { get; set; }
-    public string Telefone { get; set; }
-    public string Email { get; set; }
+    public int Id { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public string Telefone { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
     public DateTime DataNascimento { get; set; }
+
+    public Pessoa() {}
 
     protected Pessoa(string nome, string telefone, string email, DateTime dataNascimento)
     {
@@ -17,6 +19,14 @@ public abstract class Pessoa : INotification
         Telefone = telefone;
         Email = email;
         DataNascimento = dataNascimento;
+    }
+
+    public int CalcularIdade()
+    {
+        var hoje = DateTime.Today;
+        var idade = hoje.Year - DataNascimento.Year;
+        if (DataNascimento.Date > hoje.AddYears(-idade)) idade--;
+        return idade;
     }
 
     public virtual void Notificar(Pessoa pessoa)

@@ -1,29 +1,16 @@
-using System;
-using GenericRepository.Entidade;
-
 namespace GestaoSalaoDeBeleza.Models;
 
-public class Cliente : Pessoa, IEntidade
+public class Cliente : Pessoa
 {
-    public string Endereco { get; set; }
+    public string Endereco { get; set; } = string.Empty;
     public List<Agendamento> HistoricoAgendamentos { get; set; } = new();
 
-    public Cliente() : base("", "", "", DateTime.MinValue)
-    {
-        Endereco = "";
-    }
+    public Cliente() : base() { }
+
     public Cliente(string nome, string telefone, string email, DateTime dataNascimento, string endereco)
-        : base(nome, telefone, email, dataNascimento)
+            : base(nome, telefone, email, dataNascimento)
     {
         Endereco = endereco;
-    }
-
-    public int CalcularIdade()
-    {
-        var hoje = DateTime.Today;
-        var idade = hoje.Year - DataNascimento.Year;
-        if (DataNascimento.Date > hoje.AddYears(-idade)) idade--;
-        return idade;
     }
 
     public void AdicionarAgendamento(Agendamento agendamento)

@@ -2,80 +2,35 @@ using GenericRepository.Entidade;
 
 namespace GestaoSalaoDeBeleza.Models;
 
-public class Profissional : Pessoa, IEntidade
+public class Profissional : Pessoa
 {
-    public List<Especialidade> Especialidades { get; set; } = new();
-    public List<HorarioTrabalho> HorarioTrabalho { get; set; } = new();
+    public string Especialidade { get; set; } = string.Empty;
+    public TimeSpan HoraInicioTrabalho { get; set; }
+    public TimeSpan HoraFimTrabalho { get; set; }
+    public List<Agendamento> Agendamentos { get; set; } = new();
 
-    public Profissional() : base("", "", "", DateTime.MinValue) { }
+    public Profissional() : base() { }
 
     public Profissional(string nome, string telefone, string email, DateTime dataNascimento)
         : base(nome, telefone, email, dataNascimento)
     {
     }
 
-
-    public void AdicionarEspecialidade(Especialidade especialidade)
+    public bool EstaDisponivel(DateTime dataHora)
     {
-        if (!Especialidades.Contains(especialidade))
-            Especialidades.Add(especialidade);
+        var horario = dataHora.TimeOfDay;
+        return horario >= HoraInicioTrabalho && horario <= HoraFimTrabalho;
     }
-
+    
     public bool HorariosConflitam(TimeSpan inicioNovo, TimeSpan fimNovo)
     {
-        foreach (var h in HorarioTrabalho)
-        {
-            // Se o intervalo novo se sobrepõe a algum existente, retorna true (conflito)
-            if (!(fimNovo <= h.HoraInicio || inicioNovo >= h.HoraFim))
-                return true;
-        }
-        return false;
+        return !(fimNovo <= HoraInicioTrabalho || inicioNovo >= HoraFimTrabalho);
     }
-
-    // Tenta adicionar horário só se não conflitar
-    public bool TentarAdicionarHorario(HorarioTrabalho horario)
-    {
-        if (HorariosConflitam(horario.HoraInicio, horario.HoraFim))
-            return false;
-
-        HorarioTrabalho.Add(horario);
-        return true;
-    }
-
-    public void RemoverEspecialidade(Especialidade especialidade)
-    {
-        Especialidades.Remove(especialidade);
-    }
-
-    public void RemoverHorarioTrabalho(HorarioTrabalho horario)
-    {
-        HorarioTrabalho.Remove(horario);
-    }
-
 
     public override string ToString()
     {
-        var especialidades = Especialidades.Any()
-            ? string.Join(", ", Especialidades)
-            : "Nenhuma";
-
-        var horarios = HorarioTrabalho.Any()
-            ? string.Join("\n", HorarioTrabalho.Select(h => $"- {h.HoraInicio:hh\\:mm} às {h.HoraFim:hh\\:mm}"))
-            : "Nenhum";
-
-        return $"ID: {Id}\nNome: {Nome}\nTelefone: {Telefone}\nEmail: {Email}" +
-               $"\nData de Nascimento: {DataNascimento:dd/MM/yyyy}" +
-               $"\nEspecialidades: {especialidades}" +
-               $"\nHorários de Trabalho:\n{horarios}";
+        return $"ID: {Id} \nNome: {Nome} \nTelefone: {Telefone} \nEmail: {Email} " +
+                   $"\nData Nascimento: {DataNascimento:dd/MM/yyyy} \nEspecialidade: {Especialidade} " +
+                   $"\nHorário: {HoraInicioTrabalho:hh\\:mm} às {HoraFimTrabalho:hh\\:mm}";
     }
-
-}
-
-public enum Especialidade
-{
-    Cabelo,
-    Unha,
-    Estetica,
-    Sobrancelha,
-    Maquiagem
 }
