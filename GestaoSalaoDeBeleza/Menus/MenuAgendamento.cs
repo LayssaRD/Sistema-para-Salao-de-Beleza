@@ -58,7 +58,6 @@ public class MenuAgendamento
         Console.Clear();
         Console.WriteLine("=== Criar Agendamento ===\n");
 
-        // Listar clientes disponíveis
         var clientes = await context.Clientes.ToListAsync();
         if (!clientes.Any())
         {
@@ -86,7 +85,6 @@ public class MenuAgendamento
             return;
         }
 
-        // Listar serviços disponíveis
         var servicos = await context.Servicos.ToListAsync();
         if (!servicos.Any())
         {
@@ -114,7 +112,6 @@ public class MenuAgendamento
             return;
         }
 
-        // Listar profissionais da categoria do serviço
         var profissionaisDaCategoria = await context.Profissionais
             .Where(p => p.Categoria == servicoSelecionado.Categoria)
             .ToListAsync();
@@ -152,6 +149,12 @@ public class MenuAgendamento
             System.Globalization.DateTimeStyles.None, out DateTime data))
         {
             Console.WriteLine("Data inválida.");
+            return;
+        }
+
+        if (data.Date <= DateTime.Today)
+        {
+            Console.WriteLine("A data do agendamento deve ser maior que hoje.");
             return;
         }
 
@@ -270,9 +273,17 @@ public class MenuAgendamento
                 case "1":
                     Console.Write("Nova data (dd/MM/yyyy): ");
                     if (DateTime.TryParse(Console.ReadLine(), out DateTime novaData))
-                        agendamento.Data = novaData;
+                    {
+                        if (novaData.Date <= DateTime.Today)
+                            Console.WriteLine("A data do agendamento deve ser maior que hoje.");
+                        else
+                            agendamento.Data = novaData;
+                    }
                     else
+                    {
                         Console.WriteLine("Data inválida.");
+                    }
+
                     break;
 
                 case "2":
