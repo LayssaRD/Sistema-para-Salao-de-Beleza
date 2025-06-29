@@ -29,8 +29,12 @@ public class Agendamento
     }
     public override string ToString()
     {
-        var dataHoraCompleta = Data.Add(Hora);
-        return $"Agendamento em {dataHoraCompleta:dd/MM/yyyy HH:mm} com {Profissional.Nome} para {Cliente.Nome} - Status: {Status}";
+        var dataHoraInicio = Data.Date + Hora;
+        var fim = Servico != null ? dataHoraInicio.AddMinutes(Servico.DuracaoMinutos) : dataHoraInicio;
+
+        return $"ID: {AgendamentoId} - Agendamento em {dataHoraInicio:dd/MM/yyyy HH:mm} até {fim:HH:mm}\n" +
+            $"Cliente: {Cliente?.Nome}\n Profissional: {Profissional?.Nome}\n" +
+            $"Serviço: {Servico?.Nome} ({Servico?.DuracaoMinutos} min) - Status: {Status}";
     }
 
 }

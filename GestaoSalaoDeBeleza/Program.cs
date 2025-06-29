@@ -67,6 +67,7 @@ namespace GestaoSalaoDeBeleza
                         await EditarAgendamento(context);
                         break;
                     case "16":
+                        await ExcluirAgendamento(context);
                         break;
                     case "0":
                         continuar = false;
@@ -104,7 +105,6 @@ namespace GestaoSalaoDeBeleza
             Console.WriteLine("14 - Listar Agendamentos");
             Console.WriteLine("15 - Editar Agendamento");
             Console.WriteLine("16 - Excluir Agendamento");
-            Console.WriteLine("17 - Cancelar Agendamento");
             Console.WriteLine("0 - Sair");
             Console.Write("Opção: ");
         }
@@ -330,17 +330,30 @@ namespace GestaoSalaoDeBeleza
             Console.WriteLine("Profissional cadastrado com sucesso!");
         }
 
-        static async Task ListarProfissionais(SalaoContext context)
+        static async Task ListarProfissionais(SalaoContext context, CategoriaServico? categoria = null)
         {
             Console.WriteLine("\n=== Lista de Profissionais ===");
 
-            var profissionais = await context.Profissionais.ToListAsync();
+            var query = context.Profissionais.AsQueryable();
+
+            if (categoria.HasValue)
+            {
+                query = query.Where(p => p.Categoria == categoria.Value);
+                Console.WriteLine($"(Filtrando por categoria: {categoria})");
+            }
+
+            var profissionais = await query.ToListAsync();
+
+            if (!profissionais.Any())
+            {
+                Console.WriteLine("Nenhum profissional encontrado.");
+                return;
+            }
 
             foreach (var profissional in profissionais)
             {
                 Console.WriteLine(profissional);
                 Console.WriteLine("\n----------------------------------\n");
-
             }
         }
 
@@ -715,32 +728,20 @@ namespace GestaoSalaoDeBeleza
         {
             Console.WriteLine("\n=== Criar Agendamento ===");
 
-            var clientes = await context.Clientes.ToListAsync();
-            if (!clientes.Any())
-            {
-                Console.WriteLine("Nenhum cliente cadastrado. Cadastre um cliente primeiro.");
-                await CadastrarCliente(context);
-                return;
-            }
-
-            Console.WriteLine("Clientes disponíveis:");
-            foreach (var c in clientes)
-                Console.WriteLine($"{c.Id} - {c.Nome}");
+            await ListarClientes(context);
 
             Console.Write("ID do Cliente: ");
             if (!int.TryParse(Console.ReadLine(), out int clienteId))
                 return;
 
-            var servicos = await context.Servicos.ToListAsync();
-            if (!servicos.Any())
+            var cliente = await context.Clientes.FindAsync(clienteId);
+            if (cliente == null)
             {
-                Console.WriteLine("Nenhum serviço cadastrado. Cadastre um serviço primeiro.");
-                await CadastrarServico(context);
+                Console.WriteLine("Cliente não encontrado.");
                 return;
             }
-            Console.WriteLine("\nServiços disponíveis:");
-            foreach (var s in servicos)
-                Console.WriteLine($"{s.ServicoId} - {s.Nome} (Categoria: {s.Categoria}) - R$ {s.Preco:F2} - {s.DuracaoMinutos} min");
+
+            await ListarServicos(context);
 
             Console.Write("ID do Serviço: ");
             if (!int.TryParse(Console.ReadLine(), out int servicoId))
@@ -753,28 +754,26 @@ namespace GestaoSalaoDeBeleza
                 return;
             }
 
-            var profissionaisDisponiveis = await context.Profissionais
-               .Where(p => p.Categoria == servicoSelecionado.Categoria)
-               .ToListAsync();
+            var profissionaisDaCategoria = await context.Profissionais
+                .Where(p => p.Categoria == servicoSelecionado.Categoria)
+                .ToListAsync();
 
-            if (!profissionaisDisponiveis.Any())
+            if (!profissionaisDaCategoria.Any())
             {
                 Console.WriteLine($"Nenhum profissional disponível para a categoria {servicoSelecionado.Categoria}.");
                 return;
             }
 
-            Console.WriteLine("\nProfissionais disponíveis para este serviço:");
-            foreach (var p in profissionaisDisponiveis)
-                Console.WriteLine($"{p.Id} - {p.Nome} ({p.Especialidade})");
+            await ListarProfissionais(context, servicoSelecionado.Categoria);
 
             Console.Write("ID do Profissional: ");
             if (!int.TryParse(Console.ReadLine(), out int profissionalId))
                 return;
 
-            var profissionalSelecionado = profissionaisDisponiveis.FirstOrDefault(p => p.Id == profissionalId);
+            var profissionalSelecionado = profissionaisDaCategoria.FirstOrDefault(p => p.Id == profissionalId);
             if (profissionalSelecionado == null)
             {
-                Console.WriteLine("Profissional não encontrado ou não pode fazer este serviço.");
+                Console.WriteLine("Profissional não encontrado ou não pertence à categoria do serviço.");
                 return;
             }
 
@@ -800,10 +799,10 @@ namespace GestaoSalaoDeBeleza
 
             if (!profissionalSelecionado.EstaDisponivelNoHorario(dataHoraAgendamento, servicoSelecionado.DuracaoMinutos, context))
             {
-                Console.WriteLine("Profissional não está disponível neste horário.");
+                Console.WriteLine("\nProfissional não está disponível neste horário!!!");
                 Console.WriteLine("Verifique:");
                 Console.WriteLine($"- Horário de trabalho: {profissionalSelecionado.HoraInicioTrabalho:hh\\:mm} às {profissionalSelecionado.HoraFimTrabalho:hh\\:mm}");
-                Console.WriteLine("- Conflitos com outros agendamentos");
+                Console.WriteLine("- Conflitos com outros agendamentos existentes.");
                 return;
             }
 
@@ -814,21 +813,215 @@ namespace GestaoSalaoDeBeleza
                 ServicoId = servicoId,
                 Data = data,
                 Hora = hora
-
             };
 
             context.Agendamentos.Add(agendamento);
             await context.SaveChangesAsync();
 
-            Console.WriteLine("Agendamento criado com sucesso!");
-            Console.WriteLine($"Serviço: {servicoSelecionado.Nome}");
-            Console.WriteLine($"Duração: {servicoSelecionado.DuracaoMinutos} minutos");
-            Console.WriteLine($"Término previsto: {dataHoraAgendamento.AddMinutes(servicoSelecionado.DuracaoMinutos):dd/MM/yyyy HH:mm}");
+            var agendamentoCompleto = await context.Agendamentos
+                .Include(a => a.Cliente)
+                .Include(a => a.Profissional)
+                .Include(a => a.Servico)
+                .FirstOrDefaultAsync(a => a.AgendamentoId == agendamento.AgendamentoId);
+
+            Console.WriteLine("\nAgendamento criado com sucesso!");
+            Console.WriteLine(agendamentoCompleto);
         }
 
         static async Task ListarAgendamentos(SalaoContext context)
         {
             Console.WriteLine("\n=== Lista de Agendamentos ===");
+
+            var agendamentos = await context.Agendamentos
+                    .Include(a => a.Cliente)
+                    .Include(a => a.Profissional)
+                    .Include(a => a.Servico)
+                    .OrderBy(a => a.Data)
+                    .ToListAsync();
+
+            agendamentos = agendamentos.OrderBy(a => a.Data).ThenBy(a => a.Hora).ToList();
+
+            if (!agendamentos.Any())
+            {
+                Console.WriteLine("Nenhum agendamento encontrado.");
+                return;
+            }
+
+            foreach (var agendamento in agendamentos)
+            {
+                Console.WriteLine(agendamento);
+                Console.WriteLine("\n----------------------------------\n");
+            }
+        }
+
+        static async Task EditarAgendamento(SalaoContext context)
+        {
+            Console.WriteLine("\n=== Editar Agendamento ===");
+
+            await ListarAgendamentos(context);
+
+            Console.Write("\nDigite o ID do agendamento que deseja editar: ");
+            if (!int.TryParse(Console.ReadLine(), out int id))
+            {
+                Console.WriteLine("ID inválido.");
+                return;
+            }
+
+            var agendamento = await context.Agendamentos
+                .Include(a => a.Cliente)
+                .Include(a => a.Profissional)
+                .Include(a => a.Servico)
+                .FirstOrDefaultAsync(a => a.AgendamentoId == id);
+
+            if (agendamento == null)
+            {
+                Console.WriteLine("Agendamento não encontrado.");
+                return;
+            }
+
+            Console.WriteLine($"\nAgendamento atual:\n{agendamento}");
+
+            bool continuar = true;
+            while (continuar)
+            {
+                Console.WriteLine("\nQual campo deseja editar?");
+                Console.WriteLine("1 - Data");
+                Console.WriteLine("2 - Hora");
+                Console.WriteLine("3 - Cliente");
+                Console.WriteLine("4 - Profissional");
+                Console.WriteLine("5 - Serviço");
+                Console.WriteLine("6 - Alterar Status");
+                Console.WriteLine("0 - Sair");
+                Console.Write("Opção: ");
+                string? opcao = Console.ReadLine();
+
+                switch (opcao)
+                {
+                    case "1":
+                        Console.Write("Nova data (dd/MM/yyyy): ");
+                        if (DateTime.TryParse(Console.ReadLine(), out DateTime novaData))
+                            agendamento.Data = novaData;
+                        else
+                            Console.WriteLine("Data inválida.");
+                        break;
+
+                    case "2":
+                        Console.Write("Nova hora (HH:mm): ");
+                        if (TimeSpan.TryParse(Console.ReadLine(), out TimeSpan novaHora))
+                            agendamento.Hora = novaHora;
+                        else
+                            Console.WriteLine("Hora inválida.");
+                        break;
+
+                    case "3":
+                        await ListarClientes(context);
+                        Console.Write("ID do novo Cliente: ");
+                        if (int.TryParse(Console.ReadLine(), out int novoClienteId))
+                            agendamento.ClienteId = novoClienteId;
+                        else
+                            Console.WriteLine("ID inválido.");
+                        break;
+
+                    case "4":
+                        await ListarProfissionais(context, agendamento.Servico.Categoria);
+                        Console.Write("ID do novo Profissional: ");
+                        if (int.TryParse(Console.ReadLine(), out int novoProfissionalId))
+                        {
+                            var novoProfissional = await context.Profissionais.FindAsync(novoProfissionalId);
+                            var novaDataHora = agendamento.Data.Date + agendamento.Hora;
+                            if (novoProfissional != null &&
+                                novoProfissional.Categoria == agendamento.Servico.Categoria &&
+                                novoProfissional.EstaDisponivelNoHorario(novaDataHora, agendamento.Servico.DuracaoMinutos, context))
+                            {
+                                agendamento.ProfissionalId = novoProfissionalId;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Profissional inválido ou indisponível no horário.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("ID inválido.");
+                        }
+                        break;
+
+                    case "5":
+                        await ListarServicos(context);
+                        Console.Write("ID do novo Serviço: ");
+                        if (int.TryParse(Console.ReadLine(), out int novoServicoId))
+                        {
+                            var novoServico = await context.Servicos.FindAsync(novoServicoId);
+                            var novoProfissional = await context.Profissionais.FindAsync(agendamento.ProfissionalId);
+                            var novaDataHora = agendamento.Data.Date + agendamento.Hora;
+
+                            if (novoServico != null &&
+                                novoProfissional != null &&
+                                novoProfissional.Categoria == novoServico.Categoria &&
+                                novoProfissional.EstaDisponivelNoHorario(novaDataHora, novoServico.DuracaoMinutos, context))
+                            {
+                                agendamento.ServicoId = novoServicoId;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Serviço incompatível ou horário inválido.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("ID inválido.");
+                        }
+                        break;
+
+                    case "6":
+                        Console.WriteLine("Escolha o novo status:");
+                        Console.WriteLine("1 - Agendado");
+                        Console.WriteLine("2 - Concluído");
+                        Console.WriteLine("3 - Cancelado");
+                        Console.Write("Opção: ");
+                        string? statusOp = Console.ReadLine();
+
+                        try
+                        {
+                            switch (statusOp)
+                            {
+                                case "1":
+                                    agendamento.Status = StatusAgendamento.Agendado;
+                                    break;
+                                case "2":
+                                    agendamento.MarcarComoConcluido();
+                                    break;
+                                case "3":
+                                    agendamento.Cancelar();
+                                    break;
+                                default:
+                                    Console.WriteLine("Opção de status inválida.");
+                                    break;
+                            }
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            Console.WriteLine($"Erro ao alterar status: {ex.Message}");
+                        }
+                        break;
+
+                    case "0":
+                        continuar = false;
+                        break;
+
+                    default:
+                        Console.WriteLine("Opção inválida.");
+                        break;
+                }
+            }
+
+            await context.SaveChangesAsync();
+            Console.WriteLine("\nAgendamento editado com sucesso!");
+        }
+
+        static async Task ExcluirAgendamento(SalaoContext context)
+        {
+            Console.WriteLine("\n=== Excluir Agendamento ===");
 
             var agendamentos = await context.Agendamentos
                 .Include(a => a.Cliente)
@@ -845,103 +1038,34 @@ namespace GestaoSalaoDeBeleza
                 return;
             }
 
-            foreach (var agendamento in agendamentos)
-            {
-                var dataHoraCompleta = agendamento.Data.Date + agendamento.Hora;
-                Console.WriteLine($"ID: {agendamento.AgendamentoId} | Data e Hora: {dataHoraCompleta:dd/MM/yyyy HH:mm}");
-                Console.WriteLine($"Cliente: {agendamento.Cliente.Nome} | Profissional: {agendamento.Profissional.Nome}");
-                Console.WriteLine($"Serviço: {agendamento.Servico.Nome} - R$ {agendamento.Servico.Preco:F2}");
-                Console.WriteLine($"Status: {agendamento.Status}");
-                Console.WriteLine(new string('-', 50));
-            }
-        }
-
-        static async Task EditarAgendamento(SalaoContext context)
-        {
-            Console.WriteLine("\n=== Editar Agendamento ===");
-
-            var agendamentos = await context.Agendamentos
-                .Include(a => a.Cliente)
-                .Include(a => a.Profissional)
-                .Include(a => a.Servico)
-                .ToListAsync();
-
-            if (!agendamentos.Any())
-            {
-                Console.WriteLine("Nenhum agendamento encontrado.");
-                return;
-            }
-
-            Console.WriteLine("Agendamentos disponíveis:");
-
             await ListarAgendamentos(context);
 
-            Console.Write("Digite o ID do agendamento que deseja editar: ");
-            if (!Guid.TryParse(Console.ReadLine(), out Guid agendamentoId))
+            Console.Write("\nDigite o ID do agendamento que deseja excluir: ");
+            if (!int.TryParse(Console.ReadLine(), out int id))
             {
                 Console.WriteLine("ID inválido.");
                 return;
             }
 
-            var agendamento = await context.Agendamentos.FindAsync(agendamentoId);
+            var agendamento = await context.Agendamentos.FindAsync(id);
             if (agendamento == null)
             {
                 Console.WriteLine("Agendamento não encontrado.");
                 return;
             }
 
-            Console.Write("Nova data (dd/MM/yyyy): ");
-            if (!DateTime.TryParse(Console.ReadLine(), out DateTime novaData))
+            Console.WriteLine("Tem certeza que deseja excluir este agendamento? (S/N)");
+            var confirmacao = Console.ReadLine();
+            if (confirmacao == null || !confirmacao.Trim().Equals("S", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("Data inválida.");
+                Console.WriteLine("Exclusão cancelada.");
                 return;
             }
 
-            Console.Write("Nova hora (hh:mm): ");
-            if (!TimeSpan.TryParse(Console.ReadLine(), out TimeSpan novaHora))
-            {
-                Console.WriteLine("Hora inválida.");
-                return;
-            }
-
-            await ListarClientes(context);
-
-            Console.Write("ID do novo Cliente: ");
-            if (!int.TryParse(Console.ReadLine(), out int novoClienteId))
-            {
-                Console.WriteLine("ID inválido.");
-                return;
-            }
-
-            await ListarProfissionais(context);
-
-            Console.Write("ID do novo Profissional: ");
-            if (!int.TryParse(Console.ReadLine(), out int novoProfissionalId))
-            {
-                Console.WriteLine("ID inválido.");
-                return;
-            }
-
-            await ListarServicos(context);
-
-            Console.Write("ID do novo Serviço: ");
-            if (!int.TryParse(Console.ReadLine(), out int novoServicoId))
-            {
-                Console.WriteLine("ID inválido.");
-                return;
-            }
-
-            agendamento.Data = novaData;
-            agendamento.Hora = novaHora;
-            agendamento.ClienteId = novoClienteId;
-            agendamento.ProfissionalId = novoProfissionalId;
-            agendamento.ServicoId = novoServicoId;
-
-            context.Agendamentos.Update(agendamento);
+            context.Agendamentos.Remove(agendamento);
             await context.SaveChangesAsync();
 
-            Console.WriteLine("Agendamento atualizado com sucesso!");
+            Console.WriteLine("Agendamento excluído com sucesso!");
         }
-
     }
 }
